@@ -1,0 +1,28 @@
+path:
+  ckpt_path: "/workspace/nartts/AdaSpeech/output/output_en_cn_1221/ckpt/adaspeech_en_cn"
+  log_path: "/workspace/nartts/AdaSpeech/output/output_en_cn_1221/log/adaspeech_en_cn"
+  result_path: "/workspace/nartts/AdaSpeech/output/output_en_cn_1221/result/adaspeech_en_cn"
+  # read combination document
+  combination_path: "/workspace/nartts/AdaSpeech/preprocessed_data/cmb_cctv_libri/"
+optimizer:
+  batch_size: 64
+  betas: [0.9, 0.98]
+  eps: 0.000000001
+  weight_decay: 0.0
+  grad_clip_thresh: 1.0
+  grad_acc_step: 1
+  warm_up_step: 4000
+  anneal_steps: [300000, 400000, 500000]
+  anneal_rate: 0.3
+step:
+  total_step: 600000
+  log_step: 500
+  synth_step: 500
+  val_step: 500
+  save_step: 4000
+  phoneme_level_encoder_step: 60000
+ignore_layer:
+  #layers: ["encoder.src_word_emb.weight", "speaker_emb.weight"]
+  layers: []
+
+spk-type: spk # spk, xlsr

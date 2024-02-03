@@ -1,0 +1,175 @@
+// {
+//     "configurations": [
+//         {
+//             "name": "Python: 当前文件",
+//             "type": "python",
+//             "request": "launch",
+//             "program": "${file}",
+//             "console": "integratedTerminal",
+//             "justMyCode": true
+//         }
+//     ]
+// }
+
+// inference single:
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "Python: 远程附加",
+//             "cwd": "/workspace/nartts/AdaSpeech/",
+//             "type": "python",
+//             "request": "launch",
+//             "program": "/workspace/nartts/AdaSpeech/inference.py",
+//             "args": [
+//                 "--mode",
+//                 "single",
+//                 "--language_id",
+//                 "0",
+//                 "--speaker_id",
+//                 "0052_testing_spk_3",
+//                 "--reference_audio",
+//                 "/data/speech_data/LibriTTS_R/train-other-500/1593/175346/1593_175346_000009_000003.wav",
+//                 "--text",
+//                 "$(cat /workspace/nartts/AdaSpeech/test.txt)",
+//                 "-p",
+//                 "/workspace/nartts/AdaSpeech/config/en_cn_spkr/preprocess.yaml",
+//                 "-m",
+//                 "/workspace/nartts/AdaSpeech/config/en_cn_spkr/model.yaml",
+//                 "-t",
+//                 "/workspace/nartts/AdaSpeech/config/en_cn_spkr/train.yaml",
+//                 "--vocoder_checkpoint",
+//                 "/data/speech_data/cuijiayan/checkpoint/hifigan/g_finetune_02695000.pth.tar",
+//                 "--vocoder_config",
+//                 "/workspace/nartts/AdaSpeech/hifigan/config.json",
+//                 "--restore_step",
+//                 "88000",
+//             ],
+//             "env": {"CUDA_VISIBLE_DEVICES": "1"},
+//             "justMyCode": false
+//         }
+//     ]
+// }
+
+
+
+// process
+// {
+//     "configurations": [
+//         {
+//             "name": "Python: 当前文件",
+//             "type": "python",
+//             "request": "launch",
+//             "program": "/data/speech_data/cuijiayan/tools/pre_vocoder_data/process.py",
+//             "console": "integratedTerminal",
+//             "justMyCode": true,
+//             "args": [
+//                 "/data/speech_data/cuijiayan/tools/pre_vocoder_data/process_libri.yaml"
+//             ]
+//         }
+//     ]
+// } 
+
+
+
+// batch inference 
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "Python: 远程附加",
+//             "cwd": "/workspace/nartts/AdaSpeech/",
+//             "type": "python",
+//             "request": "launch",
+//             "program": "/workspace/nartts/AdaSpeech/mel-inference.py",
+//             "args": [
+//                 "--mode",
+//                 "batch",
+//                 "--source",
+//                 "/workspace/nartts/AdaSpeech/preprocessed_data/libri_spkr/train.txt",
+//                 "-p",
+//                 "/workspace/nartts/AdaSpeech/config/en_cn_spkr/preprocess.yaml",
+//                 "-m",
+//                 "/workspace/nartts/AdaSpeech/config/en_cn_spkr/model.yaml",
+//                 "-t",
+//                 "/workspace/nartts/AdaSpeech/config/en_cn_spkr/train.yaml",
+//                 "--vocoder_checkpoint",
+//                 "/data/speech_data/cuijiayan/checkpoint/hifigan/g_finetune_02695000.pth.tar",
+//                 "--vocoder_config",
+//                 "/workspace/nartts/AdaSpeech/hifigan/config.json",
+//                 "--restore_step",
+//                 "124000",
+//             ],
+//             "env": {"CUDA_VISIBLE_DEVICES": "0"},
+//             "justMyCode": false
+//         }
+//     ]
+// }
+
+// train example
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "Python: 远程附加",
+//             "cwd": "/workspace/nartts/AdaSpeech",
+//             "type": "python",
+//             "request": "launch",
+//             "program": "/workspace/nartts/AdaSpeech/train_en_cn.py",
+//             "args": [
+//                 "-p",
+//                 // "/workspace/nartts/AdaSpeech/config/libri_cctv_aishell/preprocess.yaml",
+//                 "/workspace/nartts/AdaSpeech/config/en_cn_spkr/preprocess.yaml",
+//                 "-m",
+//                 // "/workspace/nartts/AdaSpeech/config/libri_cctv_aishell/model.yaml",
+//                 "/workspace/nartts/AdaSpeech/config/en_cn_spkr/model.yaml", 
+//                 "-t",
+//                 // "/workspace/nartts/AdaSpeech/config/libri_cctv_aishell/train.yaml",
+//                 "/workspace/nartts/AdaSpeech/config/en_cn_spkr/train.yaml", 
+//                 "--vocoder_checkpoint",
+//                 "/data/speech_data/cuijiayan/checkpoint/hifigan/g_finetune_02695000.pth.tar",
+//                 "--vocoder_config",
+//                 "/workspace/nartts/AdaSpeech/hifigan/config.json",
+//                 // "--restore_step",
+//                 // "0",
+//             ],
+//             "env": {"CUDA_VISIBLE_DEVICES": "0"},
+//             "justMyCode": false
+//         }
+//     ]
+// }
+
+
+
+// train libri cctv 
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: 远程附加",
+            "cwd": "/workspace/nartts/AdaSpeech",
+            "type": "python",
+            "request": "launch",
+            "program": "/workspace/nartts/AdaSpeech/train_en_cn.py",
+            "args": [
+                "-p",
+                // "/workspace/nartts/AdaSpeech/config/libri_cctv_aishell/preprocess.yaml",
+                "/workspace/nartts/AdaSpeech/config/en_cn_xlsr/preprocess.yaml",
+                "-m",
+                // "/workspace/nartts/AdaSpeech/config/libri_cctv_aishell/model.yaml",
+                "/workspace/nartts/AdaSpeech/config/en_cn_xlsr/model.yaml", 
+                "-t",
+                // "/workspace/nartts/AdaSpeech/config/libri_cctv_aishell/train.yaml",
+                "/workspace/nartts/AdaSpeech/config/en_cn_xlsr/train.yaml", 
+                "--vocoder_checkpoint",
+                "/data/speech_data/cuijiayan/checkpoint/hifigan/g_finetune_02695000.pth.tar",
+                "--vocoder_config",
+                "/workspace/nartts/AdaSpeech/hifigan/config.json",
+                "--restore_step",
+                "108000",
+            ],
+            "env": {"CUDA_VISIBLE_DEVICES": "0"},
+            "justMyCode": false
+        }
+    ]
+}

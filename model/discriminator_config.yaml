@@ -1,0 +1,8 @@
+disc:
+  disc_win_num: 3
+  disc_interval: 1
+  disc_reduction: stack # stack|sum|none
+  disc_start_steps: 0
+  disc_norm: in
+  mel_disc_hidden_size: 128
+  lambda_mel_adv: 0.05

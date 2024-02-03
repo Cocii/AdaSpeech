@@ -1,0 +1,10 @@
+__pycache__/
+hifigan/g_finetune_02695000.pth.tar
+hifigan/generator_LJSpeech.pth.tar
+hifigan/generator_universal.pth.tar
+xlsr/xlsr_53_spkr.pt
+hifigan/16k/generator.ckpt
+hifigan/cn_finetune.pth.tar
+hifigan/generator_v1.pth.tar
+output
+xlsr/xlsr_53_spkr.pt

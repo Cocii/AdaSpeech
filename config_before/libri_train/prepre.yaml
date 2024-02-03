@@ -1,0 +1,7 @@
+dataset: "LibriTTS"
+
+path:
+  raw_path: "/data/speech_data/LibriTTS_R/train-other-500/" 
+  preprocessed_path: "./preprocessed_data_libri/"
+  spkr_emb_path: "/data/speech_data/LibriTTS/embedding/"
+  main_path: "/data/speech_data/LibriTTS/"

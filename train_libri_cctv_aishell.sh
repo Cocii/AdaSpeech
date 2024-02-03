@@ -1,0 +1,2 @@
+# From   libri + cctv + aishell
+CUDA_VISIBLE_DEVICES=1 python /workspace/nartts/AdaSpeech/train_en_cn.py -p /workspace/nartts/AdaSpeech/config/libri_cctv_aishell/preprocess.yaml -m /workspace/nartts/AdaSpeech/config/libri_cctv_aishell/model.yaml -t /workspace/nartts/AdaSpeech/config/libri_cctv_aishell/train.yaml --vocoder_checkpoint /data/speech_data/cuijiayan/checkpoint/hifigan/g_finetune_02695000.pth.tar --vocoder_config /workspace/nartts/AdaSpeech/hifigan/config.json --restore_step 124000

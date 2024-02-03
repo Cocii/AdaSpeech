@@ -1,0 +1,8 @@
+# xjp finetune
+# CUDA_VISIBLE_DEVICES=1 python /workspace/nartts/AdaSpeech/finetune.py --pretrain_dir /workspace/nartts/AdaSpeech/output/output_en_cn/ckpt/adaspeech_en_cn/162000.pth.tar -m /workspace/nartts/AdaSpeech/config/finetune_xjp/model.yaml -p /workspace/nartts/AdaSpeech/config/finetune_xjp/preprocess.yaml -t /workspace/nartts/AdaSpeech/config/finetune_xjp/train.yaml --vocoder_checkpoint /workspace/nartts/AdaSpeech/hifigan/g_finetune_02540000.pth.tar --vocoder_config /workspace/nartts/AdaSpeech/hifigan/config.json 
+
+# trump finetune 
+# CUDA_VISIBLE_DEVICES=1 python /workspace/nartts/AdaSpeech/finetune.py --pretrain_dir /workspace/nartts/AdaSpeech/output/output_en_cn/ckpt/adaspeech_en_cn/162000.pth.tar -m /workspace/nartts/AdaSpeech/config/finetune_trump/model.yaml -p /workspace/nartts/AdaSpeech/config/finetune_trump/preprocess.yaml -t /workspace/nartts/AdaSpeech/config/finetune_trump/train.yaml --vocoder_checkpoint /workspace/nartts/AdaSpeech/hifigan/g_finetune_02545000.pth.tar --vocoder_config /workspace/nartts/AdaSpeech/hifigan/config.json 
+
+# testing_spk_3 finetune 
+CUDA_VISIBLE_DEVICES=1 python /workspace/nartts/AdaSpeech/finetune.py --pretrain_dir /workspace/nartts/AdaSpeech/output/output_en_cn/ckpt/adaspeech_en_cn/162000.pth.tar -m /workspace/nartts/AdaSpeech/config/finetune_testing_spk_3/model.yaml -p /workspace/nartts/AdaSpeech/config/finetune_testing_spk_3/preprocess.yaml -t /workspace/nartts/AdaSpeech/config/finetune_testing_spk_3/train.yaml --vocoder_checkpoint /workspace/nartts/AdaSpeech/hifigan/g_finetune_02745000.pth.tar --vocoder_config /workspace/nartts/AdaSpeech/hifigan/config.json
