@@ -7,4 +7,3 @@ hifigan/16k/generator.ckpt
 hifigan/cn_finetune.pth.tar
 hifigan/generator_v1.pth.tar
 output
-xlsr/xlsr_53_spkr.pt
