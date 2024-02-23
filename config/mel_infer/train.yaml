@@ -1,0 +1,31 @@
+path:
+  ckpt_path: "/workspace/AdaSpeech/output/output_mel_infer/ckpt/adaspeech_mel_infer"
+  log_path: "/workspace/AdaSpeech/output/output_mel_infer/log/adaspeech_mel_infer"
+  result_path: "/workspace/AdaSpeech/output/output_mel_infer/result/adaspeech_mel_infer"
+  # read combination document
+  combination_path: "/workspace/AdaSpeech/preprocessed_data/cmb_cctv_libri"
+  save_path: "/data/dataset/vocoder/LibriTTS_fake"
+optimizer:
+  batch_size: 32
+  betas: [0.9, 0.98]
+  eps: 0.000000001
+  weight_decay: 0.0
+  grad_clip_thresh: 1.0
+  grad_acc_step: 1
+  warm_up_step: 4000
+  anneal_steps: [300000, 400000, 500000]
+  anneal_rate: 0.3
+step:
+  total_step: 600000
+  log_step: 5000
+  synth_step: 5000
+  val_step: 5000
+  save_step: 40000
+  phoneme_level_encoder_step: 60000
+ignore_layer:
+  #layers: ["encoder.src_word_emb.weight", "speaker_emb.weight"]
+  layers: []
+
+spk-type: spk # spk, xlsr
+
+infer: True

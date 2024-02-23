@@ -12,16 +12,15 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from utils.model import get_model, get_param_num, get_disc
-from utils.tools import to_device, log, synth_one_sample, AttrDict
+from utils.tools import to_device, log, synth_one_sample, AttrDict, infer_mels
 from model import AdaSpeechLoss
 from dataset import Dataset
 
 from evaluate import evaluate
 import sys
 sys.path.append("vocoder")
-from vocoder.models.hifigan import Generator
 import numpy as np
-# from vocoder.models.BigVGAN import BigVGAN as Generator
+import soundfile as sf
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -30,6 +29,11 @@ np.random.seed(1234)
 
 
 def get_vocoder(config, checkpoint_path):
+    if checkpoint_path.split("/")[-2] == "hifigan":
+        from vocoder.models.hifigan import Generator
+    elif checkpoint_path.split("/")[-2] == "bigvgan_22khz_80band" or checkpoint_path.split("/")[-2] == "BigVGAN":
+        from vocoder.models.BigVGAN import BigVGAN as Generator
+
     config = json.load(open(config, 'r', encoding='utf-8'))
     config = AttrDict(config)
     checkpoint_dict = torch.load(checkpoint_path, map_location="cpu")
@@ -110,6 +114,7 @@ def main(args, configs):
             # ids, raw_texts, speakers, texts, text_lens, max(text_lens), mels, mel_lens, max(mel_lens), pitches, energies, durations, avg_mel_phs, spk_embs, language_ids
             for batch in batchs:
                 batch = to_device(batch, device)
+
                 # Forward
                 if step >= phoneme_level_encoder_step:
                     phoneme_level_predictor = True
@@ -120,129 +125,147 @@ def main(args, configs):
                     exe_batch = batch + (phoneme_level_predictor, )
                     output = model(*(exe_batch))
 
-
-                mel_predicted = output[1]
-                o_disc = d_model(mel_predicted)
-                p_ = o_disc
-                adv_loss = 0.05 * MSELoss(p_, p_.detach().new_ones(p_.size()))
-                # adv_loss = torch.FloatTensor([0]).to(output[1].device)
-                ###########################
-                #      Discriminator      #
-                ###########################             
-                d_optimizer.zero_grad()
-                mel_gt = batch[6]
-                o_disc_gt = d_model(mel_gt)
-                o_disc_p = d_model(mel_predicted.detach())
-                p_gt = o_disc_gt
-                p_p = o_disc_p
-                d_loss_r = ((p_gt - 1) ** 2).mean()
-                d_loss_f = (p_p ** 2).mean()
-                total_d_loss_rf = d_loss_r + d_loss_f
-                # total_d_loss = torch.FloatTensor([0]).to(output[1].device)
-                # Disc Backward
-                total_d_loss = total_d_loss_rf / grad_acc_step
-                total_d_loss.backward()
-
-                if step % grad_acc_step == 0:
-                    nn.utils.clip_grad_norm_(d_model.parameters(), grad_clip_thresh)
-                    d_optimizer.step_and_update_lr()
-                    d_optimizer.zero_grad()
-
-                if step >= phoneme_level_encoder_step:
-                    losses = Loss(batch, output, phoneme_level_loss = True)
+                if train_config["infer"] and epoch == 1:
+                    mels, wav_reconstructions, tags = infer_mels(
+                            batch,
+                            output,
+                            vocoder,
+                            model_config,
+                            preprocess_config
+                        )
+                    for i in range(len(mels)):
+                        mel_path = os.path.join(train_config["path"]["save_path"], "mels", tags[i]+".npy")
+                        wav_path = os.path.join(train_config["path"]["save_path"], "audios", tags[i]+".wav")
+                        os.makedirs(os.path.dirname(mel_path), exist_ok=True)
+                        os.makedirs(os.path.dirname(wav_path), exist_ok=True)
+                        np.save(mel_path, mels[i].cpu().numpy())
+                        sf.write(wav_path, wav_reconstructions[i], samplerate=22050)
+                        
+                elif train_config["infer"] and epoch > 1:
+                    quit()
                 else:
-                    losses = Loss(batch, output, phoneme_level_loss = False)
-                total_loss = losses[0]
+                    mel_predicted = output[1]
+                    o_disc = d_model(mel_predicted)
+                    p_ = o_disc
+                    adv_loss = 0.05 * MSELoss(p_, p_.detach().new_ones(p_.size()))
+                    # adv_loss = torch.FloatTensor([0]).to(output[1].device)
+                    ###########################
+                    #      Discriminator      #
+                    ###########################             
+                    d_optimizer.zero_grad()
+                    mel_gt = batch[6]
+                    o_disc_gt = d_model(mel_gt)
+                    o_disc_p = d_model(mel_predicted.detach())
+                    p_gt = o_disc_gt
+                    p_p = o_disc_p
+                    d_loss_r = ((p_gt - 1) ** 2).mean()
+                    d_loss_f = (p_p ** 2).mean()
+                    total_d_loss_rf = d_loss_r + d_loss_f
+                    # total_d_loss = torch.FloatTensor([0]).to(output[1].device)
+                    # Disc Backward
+                    total_d_loss = total_d_loss_rf / grad_acc_step
+                    total_d_loss.backward()
 
-                # Generator Backward
-                total_loss = (total_loss + adv_loss)/ grad_acc_step
-                total_loss.backward()
+                    if step % grad_acc_step == 0:
+                        nn.utils.clip_grad_norm_(d_model.parameters(), grad_clip_thresh)
+                        d_optimizer.step_and_update_lr()
+                        d_optimizer.zero_grad()
 
-                if step % grad_acc_step == 0:
-                    # Clipping gradients to avoid gradient explosion
-                    nn.utils.clip_grad_norm_(model.parameters(), grad_clip_thresh)
-                    # Update weights
-                    optimizer.step_and_update_lr()
-                    optimizer.zero_grad()
+                    if step >= phoneme_level_encoder_step:
+                        losses = Loss(batch, output, phoneme_level_loss = True)
+                    else:
+                        losses = Loss(batch, output, phoneme_level_loss = False)
+                    total_loss = losses[0]
 
-                if step % log_step == 0:
-                    losses = [l.item() for l in losses]
-                    message1 = "Step {}/{}, ".format(step, total_step)
-                    message2 = "Total Loss: {:.4f}, Mel Loss: {:.4f}, Mel PostNet Loss: {:.4f}, Pitch Loss: {:.4f}, Energy Loss: {:.4f}, Duration Loss: {:.4f}, Phone_Level Loss: {:.4f}".format(
-                        *losses
-                    )
-                    message3 = ", Discriminator Loss: {:.4f}, Adversarial Loss: {:.4f}".format(
-                        total_d_loss_rf.item(), adv_loss.item()
-                    )
-                    with open(os.path.join(train_log_path, "log.txt"), "a") as f:
-                        f.write(message1 + message2 + message3 + "\n")
+                    # Generator Backward
+                    total_loss = (total_loss + adv_loss)/ grad_acc_step
+                    total_loss.backward()
 
-                    outer_bar.write(message1 + message2 + message3)
+                    if step % grad_acc_step == 0:
+                        # Clipping gradients to avoid gradient explosion
+                        nn.utils.clip_grad_norm_(model.parameters(), grad_clip_thresh)
+                        # Update weights
+                        optimizer.step_and_update_lr()
+                        optimizer.zero_grad()
 
-                    log(train_logger, step, losses=losses+[total_d_loss_rf.item(), adv_loss.item()])
+                    if step % log_step == 0:
+                        losses = [l.item() for l in losses]
+                        message1 = "Step {}/{}, ".format(step, total_step)
+                        message2 = "Total Loss: {:.4f}, Mel Loss: {:.4f}, Mel PostNet Loss: {:.4f}, Pitch Loss: {:.4f}, Energy Loss: {:.4f}, Duration Loss: {:.4f}, Phone_Level Loss: {:.4f}".format(
+                            *losses
+                        )
+                        message3 = ", Discriminator Loss: {:.4f}, Adversarial Loss: {:.4f}".format(
+                            total_d_loss_rf.item(), adv_loss.item()
+                        )
+                        with open(os.path.join(train_log_path, "log.txt"), "a") as f:
+                            f.write(message1 + message2 + message3 + "\n")
 
-                if step % synth_step == 0:
-                    fig, wav_reconstruction, wav_prediction, tag = synth_one_sample(
-                        batch,
-                        output,
-                        vocoder,
-                        model_config,
-                        preprocess_config,
-                    )
-                    log(
-                        train_logger,
-                        fig=fig,
-                        tag="Training/step_{}_{}".format(step, tag),
-                    )
-                    sampling_rate = preprocess_config["preprocessing"]["audio"][
-                        "sampling_rate"
-                    ]
-                    log(
-                        train_logger,
-                        audio=wav_reconstruction,
-                        sampling_rate=sampling_rate,
-                        tag="Training/step_{}_{}_reconstructed".format(step, tag),
-                    )
-                    log(
-                        train_logger,
-                        audio=wav_prediction,
-                        sampling_rate=sampling_rate,
-                        tag="Training/step_{}_{}_synthesized".format(step, tag),
-                    )
+                        outer_bar.write(message1 + message2 + message3)
 
-                if step % val_step == 0:
-                    d_model.eval()
-                    model.eval()
+                        log(train_logger, step, losses=losses+[total_d_loss_rf.item(), adv_loss.item()])
 
-                    message = evaluate(d_model, model, step, configs, val_logger, vocoder)
-                    with open(os.path.join(val_log_path, "log.txt"), "a") as f:
-                        f.write(message + "\n")
-                    outer_bar.write(message)
+                    if step % synth_step == 0:
+                        fig, wav_reconstruction, wav_prediction, tag = synth_one_sample(
+                            batch,
+                            output,
+                            vocoder,
+                            model_config,
+                            preprocess_config,
+                        )
+                        log(
+                            train_logger,
+                            fig=fig,
+                            tag="Training/step_{}_{}".format(step, tag),
+                        )
+                        sampling_rate = preprocess_config["preprocessing"]["audio"][
+                            "sampling_rate"
+                        ]
+                        log(
+                            train_logger,
+                            audio=wav_reconstruction,
+                            sampling_rate=sampling_rate,
+                            tag="Training/step_{}_{}_reconstructed".format(step, tag),
+                        )
+                        log(
+                            train_logger,
+                            audio=wav_prediction,
+                            sampling_rate=sampling_rate,
+                            tag="Training/step_{}_{}_synthesized".format(step, tag),
+                        )
 
-                    d_model.train()
-                    model.train()
+                    if step % val_step == 0:
+                        d_model.eval()
+                        model.eval()
 
-                if step % save_step == 0:
-                    torch.save(
-                        {
-                            "model": model.module.state_dict(),
-                            "optimizer": optimizer._optimizer.state_dict(),
-                        },
-                        os.path.join(
-                            train_config["path"]["ckpt_path"],
-                            "{}.pth.tar".format(step),
-                        ),
-                    )
-                    torch.save(
-                        {
-                            "model": d_model.module.state_dict(),
-                            "optimizer": d_optimizer._optimizer.state_dict(),
-                        },
-                        os.path.join(
-                            train_config["path"]["ckpt_path"],"disc",
-                            "{}.pth.tar".format(step),
-                        ),
-                    )
+                        message = evaluate(d_model, model, step, configs, val_logger, vocoder)
+                        with open(os.path.join(val_log_path, "log.txt"), "a") as f:
+                            f.write(message + "\n")
+                        outer_bar.write(message)
+
+                        d_model.train()
+                        model.train()
+
+                    if step % save_step == 0:
+                        torch.save(
+                            {
+                                "model": model.module.state_dict(),
+                                "optimizer": optimizer._optimizer.state_dict(),
+                            },
+                            os.path.join(
+                                train_config["path"]["ckpt_path"],
+                                "{}.pth.tar".format(step),
+                            ),
+                        )
+                        torch.save(
+                            {
+                                "model": d_model.module.state_dict(),
+                                "optimizer": d_optimizer._optimizer.state_dict(),
+                            },
+                            os.path.join(
+                                train_config["path"]["ckpt_path"],"disc",
+                                "{}.pth.tar".format(step),
+                            ),
+                        )
 
                 if step == total_step:
                     quit()

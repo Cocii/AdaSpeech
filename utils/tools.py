@@ -125,6 +125,42 @@ def expand(values, durations):
 # batch = 
 #   0           1        2      3          4              5      6         7             8         9         10       11           12         13           14
 # ids, raw_texts, speakers, texts, text_lens, max(text_lens), mels, mel_lens, max(mel_lens), pitches, energies, durations, avg_mel_phs, spk_embs, language_ids
+def infer_mels(targets, predictions, vocoder, model_config, preprocess_config):
+    mels = []
+    wavs = []
+    tags = []
+    for i in range(len(targets[0])):
+        basename = targets[0][i]
+        speakernames = targets[2][i]
+        src_len = predictions[9][i].item()
+        mel_len = predictions[10][i].item()
+        mel_target = targets[6][i, :mel_len].detach().transpose(0, 1)
+        mel_prediction = predictions[1][i, :mel_len].detach().transpose(0, 1)
+        duration = targets[11][i, :src_len].detach().cpu().numpy()
+
+        if vocoder is not None:
+            from .model import vocoder_infer
+
+            wav_reconstruction = vocoder_infer(
+                mel_target.unsqueeze(0),
+                vocoder,
+                model_config,
+                preprocess_config,
+            )[0]
+            wav_prediction = vocoder_infer(
+                mel_prediction.unsqueeze(0),
+                vocoder,
+                model_config,
+                preprocess_config,
+            )[0]
+        else:
+            wav_reconstruction = wav_prediction = None
+        mels.append(mel_prediction.unsqueeze(0))
+        wavs.append(wav_reconstruction)
+        tags.append(speakernames+"_"+basename)
+
+    return mels, wavs, tags
+
 
 def synth_one_sample(targets, predictions, vocoder, model_config, preprocess_config):
     basename = targets[0][0]

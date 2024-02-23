@@ -11,11 +11,9 @@ import torch.nn as nn
 from torch.nn import Conv1d, ConvTranspose1d, Conv2d
 from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 import sys
-sys.path.append('/workspace/nartts/AdaSpeech/vocoder/models/')
-import activations
-sys.path.append('/workspace/nartts/AdaSpeech/vocoder/models/')
-from BigVGAN_utils import init_weights, get_padding
-from alias_free_torch import *
+from . import activations
+from .BigVGAN_utils import init_weights, get_padding
+from .alias_free_torch import *
 
 LRELU_SLOPE = 0.1
 

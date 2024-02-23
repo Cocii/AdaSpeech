@@ -10,11 +10,13 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from utils.model import get_model, get_param_num
-from utils.tools import to_device, log, synth_one_sample, AttrDict
+from utils.tools import to_device, log, synth_one_sample, AttrDict, infer_mels
 from model import AdaSpeechLoss
 from dataset import Dataset
 from evaluate import evaluate
 import sys
+import numpy as np
+import soundfile as sf
 torch.manual_seed(1234)
 
 sys.path.append("vocoder")
@@ -122,76 +124,92 @@ def main(args, configs):
                 # Backward
                 total_loss = total_loss / grad_acc_step
                 total_loss.backward()
-                if step % grad_acc_step == 0:
-                    # Clipping gradients to avoid gradient explosion
-                    nn.utils.clip_grad_norm_(model.parameters(), grad_clip_thresh)
 
-                    # Update weights
-                    optimizer.step_and_update_lr()
-                    optimizer.zero_grad()
+                if train_config["infer"] and epoch == 0:
+                    mels, wav_reconstructions, tags = infer_mels(
+                            batch,
+                            output,
+                            vocoder,
+                            model_config,
+                            preprocess_config
+                        )
+                    for i in range(len(mels)):
+                        np.save(os.path.join(train_config["save_path"], "mels", tags[i]+".npy"), mels[i])
+                        sf.write(os.path.join(train_config["save_path"], "audios", tags[i]+".wav"), wav_reconstructions[i], samplerate=22050)
+                    
+                elif train_config["infer"] and epoch > 0:
+                    quit()
+                else:
+                    if step % grad_acc_step == 0:
+                        # Clipping gradients to avoid gradient explosion
+                        nn.utils.clip_grad_norm_(model.parameters(), grad_clip_thresh)
 
-                if step % log_step == 0:
-                    losses = [l.item() for l in losses]
-                    message1 = "Step {}/{}, ".format(step, total_step)
-                    message2 = "Total Loss: {:.4f}, Mel Loss: {:.4f}, Mel PostNet Loss: {:.4f}, Pitch Loss: {:.4f}, Energy Loss: {:.4f}, Duration Loss: {:.4f}, Phone_Level Loss: {:.4f}".format(
-                        *losses
-                    )
+                        # Update weights
+                        optimizer.step_and_update_lr()
+                        optimizer.zero_grad()
 
-                    with open(os.path.join(train_log_path, "log.txt"), "a") as f:
-                        f.write(message1 + message2 + "\n")
+                    if step % log_step == 0:
+                        losses = [l.item() for l in losses]
+                        message1 = "Step {}/{}, ".format(step, total_step)
+                        message2 = "Total Loss: {:.4f}, Mel Loss: {:.4f}, Mel PostNet Loss: {:.4f}, Pitch Loss: {:.4f}, Energy Loss: {:.4f}, Duration Loss: {:.4f}, Phone_Level Loss: {:.4f}".format(
+                            *losses
+                        )
 
-                    outer_bar.write(message1 + message2)
+                        with open(os.path.join(train_log_path, "log.txt"), "a") as f:
+                            f.write(message1 + message2 + "\n")
 
-                    log(train_logger, step, losses=losses)
+                        outer_bar.write(message1 + message2)
 
-                if step % synth_step == 0:
-                    fig, wav_reconstruction, wav_prediction, tag = synth_one_sample(
-                        batch,
-                        output,
-                        vocoder,
-                        model_config,
-                        preprocess_config,
-                    )
-                    log(
-                        train_logger,
-                        fig=fig,
-                        tag="Training/step_{}_{}".format(step, tag),
-                    )
-                    sampling_rate = preprocess_config["preprocessing"]["audio"][
-                        "sampling_rate"
-                    ]
-                    log(
-                        train_logger,
-                        audio=wav_reconstruction,
-                        sampling_rate=sampling_rate,
-                        tag="Training/step_{}_{}_reconstructed".format(step, tag),
-                    )
-                    log(
-                        train_logger,
-                        audio=wav_prediction,
-                        sampling_rate=sampling_rate,
-                        tag="Training/step_{}_{}_synthesized".format(step, tag),
-                    )
+                        log(train_logger, step, losses=losses)
 
-                if step % val_step == 0:
-                    model.eval()
-                    message = evaluate(model, step, configs, val_logger, vocoder)
-                    with open(os.path.join(val_log_path, "log.txt"), "a") as f:
-                        f.write(message + "\n")
-                    outer_bar.write(message)
-                    model.train()
+                    if step % synth_step == 0:
+                        fig, wav_reconstruction, wav_prediction, tag = synth_one_sample(
+                            batch,
+                            output,
+                            vocoder,
+                            model_config,
+                            preprocess_config,
+                        )
+                        log(
+                            train_logger,
+                            fig=fig,
+                            tag="Training/step_{}_{}".format(step, tag),
+                        )
+                        sampling_rate = preprocess_config["preprocessing"]["audio"][
+                            "sampling_rate"
+                        ]
+                        log(
+                            train_logger,
+                            audio=wav_reconstruction,
+                            sampling_rate=sampling_rate,
+                            tag="Training/step_{}_{}_reconstructed".format(step, tag),
+                        )
+                        log(
+                            train_logger,
+                            audio=wav_prediction,
+                            sampling_rate=sampling_rate,
+                            tag="Training/step_{}_{}_synthesized".format(step, tag),
+                        )
 
-                if step % save_step == 0:
-                    torch.save(
-                        {
-                            "model": model.module.state_dict(),
-                            "optimizer": optimizer._optimizer.state_dict(),
-                        },
-                        os.path.join(
-                            train_config["path"]["ckpt_path"],
-                            "{}.pth.tar".format(step),
-                        ),
-                    )
+                    if step % val_step == 0:
+                        model.eval()
+                        message = evaluate(model, step, configs, val_logger, vocoder)
+                        with open(os.path.join(val_log_path, "log.txt"), "a") as f:
+                            f.write(message + "\n")
+                        outer_bar.write(message)
+                        model.train()
+
+                    if step % save_step == 0:
+                        torch.save(
+                            {
+                                "model": model.module.state_dict(),
+                                "optimizer": optimizer._optimizer.state_dict(),
+                            },
+                            os.path.join(
+                                train_config["path"]["ckpt_path"],
+                                "{}.pth.tar".format(step),
+                            ),
+                        )
 
                 if step == total_step:
                     quit()
