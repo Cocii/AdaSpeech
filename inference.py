@@ -157,10 +157,11 @@ def get_vocoder(config, checkpoint_path):
     vocoder_name = checkpoint_path.split("/")[-2]
     if vocoder_name == "hifigan":
         from vocoder.models.hifigan import Generator
-    elif vocoder_name == "BigVGAN":
+    elif vocoder_name == "BigVGAN" or vocoder_name == "bigvgan_22khz_80band":
         from vocoder.models.BigVGAN import BigVGAN as Generator
     else:
         print("error in vocoder loading process! check it!  fintune.py 26")
+        
     config = json.load(open(config, 'r', encoding='utf-8'))
     config = AttrDict(config)
     checkpoint_dict = torch.load(checkpoint_path, map_location="cpu")

@@ -128,6 +128,7 @@ def expand(values, durations):
 def infer_mels(targets, predictions, vocoder, model_config, preprocess_config):
     mels = []
     wavs = []
+    fake_wavs = []
     tags = []
     for i in range(len(targets[0])):
         basename = targets[0][i]
@@ -157,9 +158,10 @@ def infer_mels(targets, predictions, vocoder, model_config, preprocess_config):
             wav_reconstruction = wav_prediction = None
         mels.append(mel_prediction.unsqueeze(0))
         wavs.append(wav_reconstruction)
+        fake_wavs.append(wav_prediction)
         tags.append(speakernames+"_"+basename)
 
-    return mels, wavs, tags
+    return mels, wavs, fake_wavs, tags
 
 
 def synth_one_sample(targets, predictions, vocoder, model_config, preprocess_config):

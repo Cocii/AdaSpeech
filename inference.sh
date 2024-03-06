@@ -55,4 +55,9 @@
 
 # CUDA_VISIBLE_DEVICES=0 python /workspace/AdaSpeech/inference.py --language_id "0" --speaker_id "1094" --reference_audio "/data/LibriTTS_R/train-other-500/1094/157768/1094_157768_000001_000001.wav" --text "$(cat /workspace/AdaSpeech/test.txt)" -p /workspace/AdaSpeech/config/en_cn_spk_gan/preprocess.yaml -m /workspace/AdaSpeech/config/en_cn_spk_gan/model.yaml -t /workspace/AdaSpeech/config/en_cn_spk_gan/train.yaml --vocoder_checkpoint /workspace/AdaSpeech/hifigan/g_finetune_02695000.pth.tar --vocoder_config /workspace/AdaSpeech/hifigan/config.json  --restore_step 96000
 
-CUDA_VISIBLE_DEVICES=0 python /workspace/AdaSpeech/inference.py --language_id "0" --speaker_id "1403" --reference_audio "/data/LibriTTS_R/train-other-500/1403/135907/1403_135907_000002_000001.wav" --text "$(cat /workspace/AdaSpeech/test.txt)" -p /workspace/AdaSpeech/config/en_cn_spk_gan/preprocess.yaml -m /workspace/AdaSpeech/config/en_cn_spk_gan/model.yaml -t /workspace/AdaSpeech/config/en_cn_spk_gan/train.yaml --vocoder_checkpoint /workspace/AdaSpeech/hifigan/g_finetune_02695000.pth.tar --vocoder_config /workspace/AdaSpeech/hifigan/config.json  --restore_step 96000
+CUDA_VISIBLE_DEVICES=0 python /workspace/AdaSpeech/inference.py --language_id "0" --speaker_id "1403" --reference_audio "/data/LibriTTS_R/train-other-500/1403/135907/1403_135907_000002_000001.wav" --text "$(cat /workspace/AdaSpeech/test.txt)" -p /workspace/AdaSpeech/config/en_cn_spk_gan/preprocess.yaml -m /workspace/AdaSpeech/config/en_cn_spk_gan/model.yaml -t /workspace/AdaSpeech/config/en_cn_spk_gan/train.yaml --vocoder_checkpoint /workspace/BigVGAN/BigVGAN/bigvgan_22khz_80band/g_05600000 --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json  --restore_step 96000
+
+# hifigan
+# --vocoder_checkpoint /workspace/AdaSpeech/hifigan/g_finetune_02695000.pth.tar --vocoder_config /workspace/AdaSpeech/hifigan/config.json
+# BigVGAN
+# --vocoder_checkpoint /workspace/AdaSpeech/bigvgan_22khz_80band/do_05050000 --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json

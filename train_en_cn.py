@@ -33,7 +33,9 @@ def get_vocoder(config, checkpoint_path):
         from vocoder.models.hifigan import Generator
     elif checkpoint_path.split("/")[-2] == "bigvgan_22khz_80band" or checkpoint_path.split("/")[-2] == "BigVGAN":
         from vocoder.models.BigVGAN import BigVGAN as Generator
-
+    else:
+        print("error in vocoder loading process! check it!  train_en_cn.py 37")
+        
     config = json.load(open(config, 'r', encoding='utf-8'))
     config = AttrDict(config)
     checkpoint_dict = torch.load(checkpoint_path, map_location="cpu")
@@ -126,7 +128,7 @@ def main(args, configs):
                     output = model(*(exe_batch))
 
                 if train_config["infer"] and epoch == 1:
-                    mels, wav_reconstructions, tags = infer_mels(
+                    mels, wav_reconstructions, wav_predictions, tags = infer_mels(
                             batch,
                             output,
                             vocoder,
@@ -134,12 +136,18 @@ def main(args, configs):
                             preprocess_config
                         )
                     for i in range(len(mels)):
-                        mel_path = os.path.join(train_config["path"]["save_path"], "mels", tags[i]+".npy")
-                        wav_path = os.path.join(train_config["path"]["save_path"], "audios", tags[i]+".wav")
-                        os.makedirs(os.path.dirname(mel_path), exist_ok=True)
-                        os.makedirs(os.path.dirname(wav_path), exist_ok=True)
-                        np.save(mel_path, mels[i].cpu().numpy())
-                        sf.write(wav_path, wav_reconstructions[i], samplerate=22050)
+                        # mel_path = os.path.join(train_config["path"]["save_path"], "mels", tags[i]+".npy")
+                        # os.makedirs(os.path.dirname(mel_path), exist_ok=True)
+                        # np.save(mel_path, mels[i].cpu().numpy())
+
+                        # wav_path = os.path.join(train_config["path"]["save_path"], "audios", tags[i]+".wav")
+                        # os.makedirs(os.path.dirname(wav_path), exist_ok=True)
+                        # sf.write(wav_path, wav_reconstructions[i], samplerate=22050)
+                        
+                        fake_wav_path = os.path.join(train_config["path"]["save_path"], "fake_audios", tags[i]+".wav")
+                        os.makedirs(os.path.dirname(fake_wav_path), exist_ok=True)
+                        sf.write(fake_wav_path, wav_predictions[i], samplerate=22050)
+
                         
                 elif train_config["infer"] and epoch > 1:
                     quit()

@@ -14,4 +14,5 @@
 # CUDA_VISIBLE_DEVICES=0 python /workspace/nartts/AdaSpeech/synthesis_mel.py -p /workspace/nartts/AdaSpeech/config/en_cn_spkr/preprocess.yaml -m /workspace/nartts/AdaSpeech/config/en_cn_spkr/model.yaml -t /workspace/nartts/AdaSpeech/config/en_cn_spkr/train.yaml --vocoder_checkpoint /workspace/nartts/AdaSpeech/BigVGAN/g_05000000_large.zip --vocoder_config /workspace/nartts/AdaSpeech/BigVGAN/config_large.json --restore_step 162000
 
 # create fake mel-audio dataset for vocoder training finetune
-CUDA_VISIBLE_DEVICES=0 python /workspace/AdaSpeech/train_en_cn.py -p /workspace/AdaSpeech/config/mel_infer/preprocess.yaml -m /workspace/AdaSpeech/config/mel_infer/model.yaml -t /workspace/AdaSpeech/config/mel_infer/train.yaml --vocoder_checkpoint /workspace/AdaSpeech/bigvgan_22khz_80band/g_05000000.zip --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json --restore_step 96000
+CUDA_VISIBLE_DEVICES=0 python /workspace/AdaSpeech/train_en_cn.py -p /workspace/AdaSpeech/config/mel_infer/preprocess.yaml -m /workspace/AdaSpeech/config/mel_infer/model.yaml -t /workspace/AdaSpeech/config/mel_infer/train.yaml --vocoder_checkpoint /workspace/AdaSpeech/bigvgan_22khz_80band/g_05000000 --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json --restore_step 96000
+
