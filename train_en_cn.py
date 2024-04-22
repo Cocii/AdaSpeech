@@ -153,8 +153,7 @@ def main(args, configs):
                     quit()
                 else:
                     mel_predicted = output[1]
-                    o_disc = d_model(mel_predicted)
-                    p_ = o_disc
+                    p_ = d_model(mel_predicted)
                     adv_loss = 0.05 * MSELoss(p_, p_.detach().new_ones(p_.size()))
                     # adv_loss = torch.FloatTensor([0]).to(output[1].device)
                     ###########################
@@ -162,10 +161,8 @@ def main(args, configs):
                     ###########################             
                     d_optimizer.zero_grad()
                     mel_gt = batch[6]
-                    o_disc_gt = d_model(mel_gt)
-                    o_disc_p = d_model(mel_predicted.detach())
-                    p_gt = o_disc_gt
-                    p_p = o_disc_p
+                    p_gt = d_model(mel_gt)
+                    p_p = d_model(mel_predicted.detach())
                     d_loss_r = ((p_gt - 1) ** 2).mean()
                     d_loss_f = (p_p ** 2).mean()
                     total_d_loss_rf = d_loss_r + d_loss_f

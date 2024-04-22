@@ -155,13 +155,15 @@ def preprocess_mandarin(text, preprocess_config):
 
 def get_vocoder(config, checkpoint_path):
     vocoder_name = checkpoint_path.split("/")[-2]
+    bigvgan_name = checkpoint_path.split("/")[-3]
+    bigvgan_name1 = checkpoint_path.split("/")[-4]
     if vocoder_name == "hifigan":
         from vocoder.models.hifigan import Generator
-    elif vocoder_name == "BigVGAN" or vocoder_name == "bigvgan_22khz_80band":
+    elif vocoder_name == "BigVGAN" or vocoder_name == "bigvgan_22khz_80band" or bigvgan_name == "bigvgan_22khz_80band" or bigvgan_name1 ==  "bigvgan_22khz_80band":
         from vocoder.models.BigVGAN import BigVGAN as Generator
     else:
         print("error in vocoder loading process! check it!  fintune.py 26")
-        
+
     config = json.load(open(config, 'r', encoding='utf-8'))
     config = AttrDict(config)
     checkpoint_dict = torch.load(checkpoint_path, map_location="cpu")

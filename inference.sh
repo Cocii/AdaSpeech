@@ -55,9 +55,68 @@
 
 # CUDA_VISIBLE_DEVICES=0 python /workspace/AdaSpeech/inference.py --language_id "0" --speaker_id "1094" --reference_audio "/data/LibriTTS_R/train-other-500/1094/157768/1094_157768_000001_000001.wav" --text "$(cat /workspace/AdaSpeech/test.txt)" -p /workspace/AdaSpeech/config/en_cn_spk_gan/preprocess.yaml -m /workspace/AdaSpeech/config/en_cn_spk_gan/model.yaml -t /workspace/AdaSpeech/config/en_cn_spk_gan/train.yaml --vocoder_checkpoint /workspace/AdaSpeech/hifigan/g_finetune_02695000.pth.tar --vocoder_config /workspace/AdaSpeech/hifigan/config.json  --restore_step 96000
 
-CUDA_VISIBLE_DEVICES=0 python /workspace/AdaSpeech/inference.py --language_id "0" --speaker_id "1403" --reference_audio "/data/LibriTTS_R/train-other-500/1403/135907/1403_135907_000002_000001.wav" --text "$(cat /workspace/AdaSpeech/test.txt)" -p /workspace/AdaSpeech/config/en_cn_spk_gan/preprocess.yaml -m /workspace/AdaSpeech/config/en_cn_spk_gan/model.yaml -t /workspace/AdaSpeech/config/en_cn_spk_gan/train.yaml --vocoder_checkpoint /workspace/BigVGAN/BigVGAN/bigvgan_22khz_80band/g_05600000 --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json  --restore_step 96000
+
+
+
+man31="/data/LibriTTS_R/train-other-500/31/121970/31_121970_000004_000001.wav"
+# woman20="/data/LibriTTS_R/train-other-500/20/205/20_205_000002_000002.wav"
+woman29="/data/LibriTTS_R/train-other-500/29/123027/29_123027_000001_000001.wav"
+man46="/data/LibriTTS_R/train-other-500/46/127996/46_127996_000000_000001.wav"
+woman47="/data/LibriTTS_R/train-other-500/47/122796/47_122796_000001_000000.wav" # nice
+yaemiko="/data/dataset/YaeMiko/vo_DQAQ104_1_yaeMiko_35.wav"
+gorou="/data/dataset/Gorou/vo_dialog_DQAQ010_gorou_03.wav"
+
+baseG="/workspace/BigVGAN/BigVGAN/bigvgan_22khz_80band/fakeMel_realAudio_finetune/g_05700000"
+testG="/workspace/BigVGAN/BigVGAN/bigvgan_22khz_80band/RealFakeAduio_rawnet_finetune/generator/g_09000000"
+testG1='/workspace/BigVGAN/BigVGAN/bigvgan_22khz_80band/detect_experiment1/generator/g_06450000'
+
+ref_audio_path=$woman47
+speaker_id=$(echo "$ref_audio_path" | cut -d'/' -f5)
+speaker_id=$(printf "%04d" "$speaker_id")
+
+# ref_audio_path=$yaemiko
+# speaker_id=$(echo "$ref_audio_path" | cut -d'/' -f4)
+
+# CUDA_VISIBLE_DEVICES=0 python /workspace/AdaSpeech/inference.py \
+#     --language_id "0" \
+#     --speaker_id $speaker_id \
+#     --reference_audio $ref_audio_path \
+#     --text "$(cat /workspace/AdaSpeech/test.txt)" \
+#     -p /workspace/AdaSpeech/config/en_cn_spk_gan/preprocess.yaml \
+#     -m /workspace/AdaSpeech/config/en_cn_spk_gan/model.yaml \
+#     -t /workspace/AdaSpeech/config/en_cn_spk_gan/train.yaml \
+#     --restore_step 96000 \
+#     --vocoder_checkpoint $baseG \
+#     --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json
+
+CUDA_VISIBLE_DEVICES=0 python /workspace/AdaSpeech/inference.py \
+    --language_id "0" \
+    --speaker_id $speaker_id \
+    --reference_audio $ref_audio_path \
+    --text "$(cat /workspace/AdaSpeech/test.txt)" \
+    -p /workspace/AdaSpeech/config/en_cn_spk_gan/preprocess.yaml \
+    -m /workspace/AdaSpeech/config/en_cn_spk_gan/model.yaml \
+    -t /workspace/AdaSpeech/config/en_cn_spk_gan/train.yaml \
+    --restore_step 96000 \
+    --vocoder_checkpoint $testG1 \
+    --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json
+
+# CUDA_VISIBLE_DEVICES=0 python /workspace/AdaSpeech/inference.py \
+#     --language_id "0" \
+#     --speaker_id $speaker_id \
+#     --reference_audio $ref_audio_path \
+#     --text "$(cat /workspace/AdaSpeech/test.txt)" \
+#     -p /workspace/AdaSpeech/config/en_cn_spk_gan/preprocess.yaml \
+#     -m /workspace/AdaSpeech/config/en_cn_spk_gan/model.yaml \
+#     -t /workspace/AdaSpeech/config/en_cn_spk_gan/train.yaml \
+#     --restore_step 96000 \
+#     --vocoder_checkpoint /workspace/AdaSpeech/bigvgan_22khz_80band/g_05000000 \
+#     --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json
+
 
 # hifigan
 # --vocoder_checkpoint /workspace/AdaSpeech/hifigan/g_finetune_02695000.pth.tar --vocoder_config /workspace/AdaSpeech/hifigan/config.json
 # BigVGAN
-# --vocoder_checkpoint /workspace/AdaSpeech/bigvgan_22khz_80band/do_05050000 --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json
+# --vocoder_checkpoint /workspace/AdaSpeech/bigvgan_22khz_80band/g_05000000 --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json
+## fake real rawnet2 finetune
+# --vocoder_checkpoint /workspace/BigVGAN/BigVGAN/bigvgan_22khz_80band/RealFakeAduio_rawnet_finetune/g_05250000 --vocoder_config /workspace/AdaSpeech/bigvgan_22khz_80band/config.json

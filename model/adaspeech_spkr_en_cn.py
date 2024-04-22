@@ -107,8 +107,6 @@ class AdaSpeech_spkr_en_cn(nn.Module):
         )
         speaker_embedding = self.spk_norm(spk_emb)
         speaker_embedding = self.spk_linear(speaker_embedding)
-        # language_embedding = self.lang_emb(languages)
-
         output = self.encoder(texts, speaker_embedding, src_masks)
         xs = self.UtteranceEncoder(torch.transpose(mels, 1, 2))
         xs = torch.transpose(xs, 1, 2)
