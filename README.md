@@ -1,98 +1,54 @@
-# AdaSpeech - PyTorch Implementation
+# AdaSpeech Inference Guide
 
-This is an unofficial PyTorch implementation of AdaSpeech. [**AdaSpeech: Adaptive text to speech for custom voice**](https://arxiv.org/pdf/2103.00993.pdf).
+This guide explains how to properly run inference using the AdaSpeech model.
 
-This project is based on [ming024's implementation](https://github.com/ming024/FastSpeech2) of FastSpeech 2.
+## Installation
 
-![](./assets/model.png)
+1. Clone the repository:
+   ```bash
+   git clone git@github.com:Cocii/AdaSpeech.git
+   cd AdaSpeech
+   ```
 
-## Note:
-* Support multi languague training, the default phoneme support Vietnamese and English, custom for other language
-* `Utterance level encoder` and `Phoneme level encoder` to improve acoustic generalization
+2. Install the required Python packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-![](./assets/acoustic_embed.png)
+## Model and Vocoder Checkpoints
 
-* `Conditional layer norm` which is the soul of AdaSpeech paper
+Before running inference, you need:
 
-![](./assets/cln.png)
+1. AdaSpeech model checkpoint
+2. Vocoder checkpoint (default BigVGAN)
+3. Configuration files:
+   - `preprocess.yaml`
+   - `model.yaml` 
+   - `train.yaml`
 
-## Requirements:
+## Running Inference
 
-* Install Pytorch
-Before installing pytorch please check your Cuda version by running following command : 
-`nvcc --version`
-
-```
-pip install -r requirements.txt
-```
-
-# Training
-
-## Preprocessing
-
-- First, align the corpus by using MFA tool to get TextGrid (note that you have to run each language separately then move all speaker's TextGrid in to single folder named "textgrid")
-- copy textgrid folder in to preprocessed path
-
-run the preprocessing script
-
-```
-python preprocess.py config/pretrain/preprocess.yaml
-```
-## Training
-
-Train baseline model with
-```
-python train.py [-h] [-p PREPROCESS_CONFIG_PATH] [-m MODEL_CONFIG_PATH] [-t TRAIN_CONFIG_PATH] [--vocoder_checkpoint VOCODER_CHECKPOINT_PATH] [--vocoder_config VOCODER_CONFIG_PATH]
+### Basic Command Structure
+```bash
+CUDA_VISIBLE_DEVICES=0 python inference.py \
+--language_id <LANG_ID> \
+--speaker_id <SPEAKER_ID> \
+--reference_audio <REF_AUDIO_PATH> \
+--text "$(cat test.txt)" \
+-p <PREPROCESS_CONFIG> \
+-m <MODEL_CONFIG> \
+-t <TRAIN_CONFIG> \
+--restore_step <CHECKPOINT_STEP> \
+--vocoder_checkpoint <VOCODER_PATH> \
+--vocoder_config <VOCODER_CONFIG>
 ```
 
-# Finetune
+### Key Parameters
 
-## Preprocessing
-
-First, align the corpus by using MFA tool to get TextGrid (note that only finetune 1 speaker for best quality)
-
-run the preprocessing script
-
-```
-python preprocess.py config/finetune/preprocess.yaml
-```
-
-## Finetune
-
-Finetune speaker voice with
-
-```
-python finetune.py [-h] [--pretrain_dir BASE_LINE_MODEL_PATH] [-p PREPROCESS_CONFIG_PATH] [-m MODEL_CONFIG_PATH] [-t TRAIN_CONFIG_PATH] [--vocoder_checkpoint VOCODER_CHECKPOINT_PATH] [--vocoder_config VOCODER_CONFIG_PATH]
-```
-
-# TensorBoard
-
-Use
-
-```
-tensorboard [--logdir LOG_PATH]
-```
-* Tensorboard for pretrain model
-![](./assets/pretrain_tensorboard.png)
-
-* Tensorboard for finetune with only 5 sentences
-![](./assets/finetune_tensorboard.png)
-
-# References
-- [**AdaSpeech: Adaptive text to speech for custom voice**](https://arxiv.org/pdf/2103.00993.pdf).
-- [ming024's implementation](https://github.com/ming024/FastSpeech2)
-- [rishikksh20's AdaSpeech implementation](https://github.com/rishikksh20/AdaSpeech)
-
-# Citation
-```bibtex
-@misc{chen2021adaspeech,
-      title={AdaSpeech: Adaptive Text to Speech for Custom Voice}, 
-      author={Mingjian Chen and Xu Tan and Bohan Li and Yanqing Liu and Tao Qin and Sheng Zhao and Tie-Yan Liu},
-      year={2021},
-      eprint={2103.00993},
-      archivePrefix={arXiv},
-      primaryClass={eess.AS}
-}
-```
-
-
+- `language_id`: Language identifier (0 for English, 1 for Chinese)
+- `speaker_id`: Target speaker identifier  
+- `reference_audio`: Path to reference audio file for speaker embedding
+- `text`: Input text for synthesis (can be read from file)
+- `restore_step`: Checkpoint step number to load
+- `vocoder_checkpoint`: Path to vocoder model weights
+- `vocoder_config`: Path to vocoder configuration file
