@@ -8,17 +8,12 @@ import matplotlib
 from scipy.io import wavfile
 from matplotlib import pyplot as plt
 import re
-
-matplotlib.use("Agg")
-
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+matplotlib.use("Agg")
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
-
 
 def to_device(data, device):
     if len(data) != 8:
@@ -287,9 +282,6 @@ def synth_samples(targets, predictions, vocoder, model_config, preprocess_config
         print("Saving \"{}\"...".format(figname))
         plt.savefig(os.path.join(pic_path, figname))
         plt.close()
-
-    from .model import vocoder_infer
-
     mel_predictions = predictions[1].transpose(1, 2)
     lengths = predictions[10] * preprocess_config["preprocessing"]["stft"]["hop_length"]
     wav_predictions = vocoder_infer(
@@ -305,6 +297,47 @@ def synth_samples(targets, predictions, vocoder, model_config, preprocess_config
         
     return mel_predictions, wavname.split('.')[0].split("/")[-1]
 
+def synth_samples_wav(targets, predictions, vocoder, model_config, preprocess_config, path):
+    """
+    Synthesize audio files from batch predictions
+    Args:
+        targets: input data containing text and speaker information
+        predictions: model output predictions
+        vocoder: vocoder model for waveform generation
+        model_config: model configuration
+        preprocess_config: preprocessing configuration
+        path: path to save generated audio files
+    Returns:
+        wav_paths: list of paths to generated audio files
+    """
+    basenames = targets[1]
+    speaker = targets[2]
+    wav_paths = []
+
+    # Create output directory if not exists
+    os.makedirs(path, exist_ok=True)
+
+    # Generate mel spectrograms and convert to audio
+    mel_predictions = predictions[1].transpose(1, 2)
+    lengths = predictions[10] * preprocess_config["preprocessing"]["stft"]["hop_length"]
+    from .model import vocoder_infer
+    wav_predictions = vocoder_infer(
+        mel_predictions, vocoder, model_config, preprocess_config, lengths=lengths
+    )
+
+    # Save each audio file
+    sampling_rate = preprocess_config["preprocessing"]["audio"]["sampling_rate"]
+    for wav, basename in zip(wav_predictions, basenames):
+        # Generate unique filename
+        # tmpname = f"{speaker}_{basename}.wav"
+        wavname = check_and_rename_file(path, f"{speaker}_{basename}.wav")
+        os.makedirs(os.path.dirname(wavname), exist_ok=True)
+        # Save audio file
+        wavfile.write(wavname, sampling_rate, wav)
+        print(f'Saving wav "{wavname}"...')
+        wav_paths.append(wavname)
+    
+    return wav_paths
 
 
 def plot_mel(data, stats, titles):

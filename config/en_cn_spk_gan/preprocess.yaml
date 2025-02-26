@@ -3,10 +3,10 @@ dataset: ["libri_spkr"] #
 
 path:
   raw_path: "/data/speech_data/LibriTTS/audios/"
-  datasets_base_path: "/workspace/AdaSpeech/preprocessed_data/"
-  lexicon_path: "/workspace/AdaSpeech/lexicon/"
-  preprocessed_path: "/workspace/AdaSpeech/preprocessed_data/libri_spkr/"
-  combined_path: "/workspace/AdaSpeech/preprocessed_data/cmb_cctv_libri/"
+  datasets_base_path: "preprocessed_data/"
+  lexicon_path: "lexicon/"
+  preprocessed_path: "preprocessed_data/libri_spkr/"
+  combined_path: "preprocessed_data/cmb_cctv_libri/"
 
 # path:
 #   raw_path: "/data/speech_data/LibriTTS/audios/"

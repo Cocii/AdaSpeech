@@ -9,7 +9,7 @@ import numpy as np
 from dataset import TextDataset
 from pypinyin import pinyin, Style
 from utils.model import get_model
-from utils.tools import to_device, synth_samples, AttrDict, check_and_rename_file
+from utils.tools import to_device, synth_samples, AttrDict, check_and_rename_file, synth_samples_wav
 from torch.utils.data import DataLoader
 from dataset import Dataset
 from text import text_to_sequence
@@ -24,9 +24,10 @@ from librosa.util import normalize
 # sys.path.append("vocoder")
 import re
 from xlsr.wav2vec2_speaker_encoder import SpeakerEncoder
-
+import nltk
+nltk.download('averaged_perceptron_tagger')
+nltk.download('averaged_perceptron_tagger_eng')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 def read_lexicon(lex_path):
     lexicon = {}
     with open(lex_path) as f:
@@ -154,19 +155,17 @@ def preprocess_mandarin(text, preprocess_config):
 
 
 def get_vocoder(config, checkpoint_path):
-    vocoder_name = checkpoint_path.split("/")[-2]
-    bigvgan_name = checkpoint_path.split("/")[-3]
-    bigvgan_name1 = checkpoint_path.split("/")[-4]
-    if vocoder_name == "hifigan":
+    
+    if "hifigan" in checkpoint_path:
         from vocoder.models.hifigan import Generator
-    elif vocoder_name == "BigVGAN" or vocoder_name == "bigvgan_22khz_80band" or bigvgan_name == "bigvgan_22khz_80band" or bigvgan_name1 ==  "bigvgan_22khz_80band":
+    elif "BigVGAN" in checkpoint_path or "g_" in checkpoint_path:
         from vocoder.models.BigVGAN import BigVGAN as Generator
     else:
         print("error in vocoder loading process! check it!  fintune.py 26")
 
     config = json.load(open(config, 'r', encoding='utf-8'))
     config = AttrDict(config)
-    checkpoint_dict = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint_dict = torch.load(checkpoint_path, torch.device('cpu'))
     vocoder = Generator(config).to(device).eval()
     vocoder.load_state_dict(checkpoint_dict['generator'])
     vocoder.remove_weight_norm()
@@ -212,7 +211,59 @@ def synthesize(model, step, configs, vocoder, batchs, control_values, ref_path =
                     os.path.join(train_config["path"]["result_path"], "mel", tmpname),
                     mel_spectrogram.cpu().numpy(),
                 )
+def synthesize_wav(model, step, configs, vocoder, batchs, control_values, ref_path):
+    """
+    Main synthesis function for generating audio from text
+    Args:
+        model: trained model
+        step: current step (for logging)
+        configs: tuple of (preprocess_config, model_config, train_config)
+        vocoder: vocoder model for waveform generation
+        batchs: input batch data
+        control_values: tuple of (pitch_control, energy_control, duration_control)
+        ref_path: path to reference speaker embedding
+    Returns:
+        wav_paths: list of paths to generated audio files
+    """
+    preprocess_config, model_config, train_config = configs
+    pitch_control, energy_control, duration_control = control_values
+    
+    # Load speaker embedding
+    emb_np = np.load(ref_path)
+    emb_torch = torch.from_numpy(emb_np).float().to(device)
+    
+    wav_paths = []
+    for batch in batchs:
+        batch = to_device(batch, device)
+        with torch.no_grad():
+            # Forward pass
+            output = model.inference(
+                *(batch),
+                p_control=pitch_control,
+                e_control=energy_control,
+                d_control=duration_control,
+                spk_emb=emb_torch
+            )
             
+            # Convert IDs to raw texts
+            batch = list(batch)
+            batch = [[i] for i in batch]
+            batch[0] = batch[1]
+            batch = tuple(batch)
+            
+            # Generate and save audio
+            paths = synth_samples_wav(
+                batch,
+                output,
+                vocoder,
+                model_config,
+                preprocess_config,
+                train_config["path"]["result_path"]
+            )
+            wav_paths.extend(paths)
+    
+    return wav_paths
+
 def get_reference_mel(reference_audio_dir, STFT):
     wav, _ = librosa.load(reference_audio_dir)
     mel_spectrogram, energy = Audio.tools.get_mel_from_wav(wav, STFT)
@@ -367,7 +418,7 @@ if __name__ == "__main__":
     mel_spectrogram = get_reference_mel(wav_path, STFT)
     mel_spectrogram = np.array([mel_spectrogram])
     # if preprocess_config["dataset"][int(languages)] == "aishell3":
-    if args.language_id == 2:
+    if args.language_id == 2: # hard code for spk id
         speaker = wav_path.split('/')[-1].split('.')[0][:7]
         id = wav_path.split('/')[-1].split('.')[0]
     else:
@@ -399,11 +450,12 @@ if __name__ == "__main__":
         if spk_type == "spk":
             from pyannote.audio import Inference
             from pyannote.audio import Model
-            model_spkr = Model.from_pretrained("pyannote/embedding",use_auth_token="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")
+            model_spkr = Model.from_pretrained("pyannote/embedding",use_auth_token="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")
             spkr_embedding = Inference(model_spkr, window="whole")
             audio, sampling_rate = librosa.load(os.path.join(wav_path), sr=22050)
             audio = normalize(audio) * 0.95
             emb = spkr_embedding({'waveform': torch.FloatTensor(audio).unsqueeze(0), 'sample_rate': sampling_rate})
+            os.makedirs(os.path.dirname(embedding_path), exist_ok=True) 
             np.save(embedding_path, emb)
         if spk_type == 'xlsr':
             spk_encoder = SpeakerEncoder().to(device)
@@ -430,7 +482,7 @@ if __name__ == "__main__":
     if args.mode == "single":
         # write the new speaker in speakers.json
         raw_texts = []
-        with open('/workspace/AdaSpeech/test.txt', 'r') as file:
+        with open('test.txt', 'r') as file:
             for line in file:
                 raw_texts.append(line.strip())
         # assert 0 == 1 
@@ -452,5 +504,5 @@ if __name__ == "__main__":
         text_lens = [np.array([len(i)]) for i in texts]
         for i in range(len(texts)):
             batchs = [(id, raw_texts[i], speakers, texts[i], text_lens[i], max(text_lens[i]), mel_spectrogram, languages)]
-            synthesize(model, args.restore_step, configs, vocoder, batchs, control_values, embedding_path)
+            synthesize_wav(model, args.restore_step, configs, vocoder, batchs, control_values, embedding_path)
  

@@ -218,7 +218,7 @@ class AdaSpeech_spkr_en_cn(nn.Module):
         # mel of reference audios
         xs = self.UtteranceEncoder(torch.transpose(mels, 1, 2))
         xs = torch.transpose(xs, 1, 2)
-        spk_path = os.path.join("/workspace/AdaSpeech/output/spk_utterance/", 'utterance_'+ str(speakers[0])+ "_"+str(ids)+ '.npy')
+        spk_path = os.path.join("output/spk_utterance/", 'utterance_'+ str(speakers[0])+ "_"+str(ids)+ '.npy')
         if not os.path.exists(spk_path):
             os.makedirs(os.path.dirname(spk_path), exist_ok=True)
         np.save(spk_path, xs.expand(-1, max_src_len, -1).cpu().numpy())
@@ -230,7 +230,7 @@ class AdaSpeech_spkr_en_cn(nn.Module):
         output = output + speaker_embedding.unsqueeze(1).expand(
             -1, max_src_len, -1
         )
-        np.save(os.path.join("/workspace/AdaSpeech/output/spk_utterance/", 'spk_'+ str(speakers[0])+ "_" +str(ids)+ '.npy'), speaker_embedding.unsqueeze(1).expand(-1, max_src_len, -1).cpu().numpy())
+        np.save(os.path.join("output/spk_utterance/", 'spk_'+ str(speakers[0])+ "_" +str(ids)+ '.npy'), speaker_embedding.unsqueeze(1).expand(-1, max_src_len, -1).cpu().numpy())
 
         # language embedding part
         # language_embedding = self.lang_emb(languages)

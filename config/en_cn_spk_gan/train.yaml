@@ -1,9 +1,9 @@
 path:
-  ckpt_path: "/workspace/AdaSpeech/output/output_spk_gan/ckpt/adaspeech_spk_gan"
-  log_path: "/workspace/AdaSpeech/output/output_spk_gan/log/adaspeech_spk_gan"
-  result_path: "/workspace/AdaSpeech/output/output_spk_gan/result/adaspeech_spk_gan"
+  ckpt_path: "output/output_spk_gan/ckpt/adaspeech_spk_gan"
+  log_path: "output/output_spk_gan/log/adaspeech_spk_gan"
+  result_path: "output/output_spk_gan/result/adaspeech_spk_gan"
   # read combination document
-  combination_path: "/workspace/AdaSpeech/preprocessed_data/cmb_cctv_libri"
+  combination_path: "preprocessed_data/cmb_cctv_libri"
 optimizer:
   batch_size: 64
   betas: [0.9, 0.98]

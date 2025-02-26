@@ -21,7 +21,7 @@ def get_disc(args, configs, device, train=False):
             train_config["path"]["ckpt_path"],'disc',
             "{}.pth.tar".format(args.restore_step),
         )
-        ckpt = torch.load(ckpt_path)
+        ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
         d_model.load_state_dict(ckpt['model'])
     if train:
         scheduled_optim = ScheduledOptim(
@@ -64,7 +64,7 @@ def get_model(args, configs, device, train=False):
             train_config["path"]["ckpt_path"],
             "{}.pth.tar".format(args.restore_step),
         )
-        ckpt = torch.load(ckpt_path)
+        ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
 
         # print("Current model state dict keys and sizes:")
         # for name, param in model.state_dict().items():
@@ -114,7 +114,7 @@ def load_pretrain(args, configs, device, train=False):
             pass
 
     ckpt_path = args.pretrain_dir
-    ckpt = torch.load(ckpt_path)
+    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
     model.load_state_dict(ckpt["model"])
     scheduled_optim = ScheduledOptim(
         model, train_config, model_config, 0
